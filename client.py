@@ -76,38 +76,39 @@ def p2p_host():
         log(f"Connection from {addr}", 1)
 
         if access_key:
-            # Step 1: Send request for key
             request = {"Message": "Pls enter the key"}
             encoded_request = base64.b64encode(json.dumps(request).encode()).decode()
             conn.send(encoded_request.encode())
 
-            # Step 2: Receive response
-            try:
-                data = conn.recv(4096)
-                decoded = base64.b64decode(data).decode()
-                response = json.loads(decoded)
-                received_key = response.get("Message", "")
+            attempts = 0
+            while attempts < 4:
+                try:
+                    data = conn.recv(4096)
+                    decoded = base64.b64decode(data).decode()
+                    response = json.loads(decoded)
+                    received_key = response.get("Message", "")
 
-                if received_key != access_key:
-                    log("Wrong key provided. Disconnecting.", 2)
+                    if received_key != access_key:
+                        attempts += 1
+                        if attempts >= 4:
+                            log("Too many failed attempts. Disconnecting.", 2)
+                            conn.close()
+                            return
+                        else:
+                            retry = {"Message": "Wrong key"}
+                            encoded_retry = base64.b64encode(json.dumps(retry).encode()).decode()
+                            conn.send(encoded_retry.encode())
+                    else:
+                        log("Correct key received. Connection accepted.", 1)
+                        success = {"Message": "Success"}
+                        encoded_success = base64.b64encode(json.dumps(success).encode()).decode()
+                        conn.send(encoded_success.encode())
+                        conn.close()
+                        return
+                except Exception as e:
+                    log(f"Error during key exchange: {e}", 3)
                     conn.close()
                     return
-                else:
-                    log("Correct key received. Connection accepted.", 1)
-                    success = {"Message": "Success"}
-                    encoded_success = base64.b64encode(json.dumps(success).encode()).decode()
-                    conn.send(encoded_success.encode())
-                    conn.close()
-                    return
-            except Exception as e:
-                log(f"Error during key exchange: {e}", 3)
-                conn.close()
-                return
-        else:
-            success = {"Message": "Success"}
-            encoded_success = base64.b64encode(json.dumps(success).encode()).decode()
-            conn.send(encoded_success.encode())
-            conn.close()
 
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server.bind(("0.0.0.0", port))
@@ -126,10 +127,7 @@ def p2p_connect():
     clear()
     ip = input("Enter IP to connect to: ").strip()
     port_input = input("Enter port (default 25336): ").strip()
-    key_input = input("Enter key (if required): ").strip()
-
     port = int(port_input) if port_input else 25336
-    key = key_input if key_input else None
 
     try:
         client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -141,29 +139,41 @@ def p2p_connect():
         message = json.loads(decoded)
 
         if message.get("Message") == "Pls enter the key":
-            if not key:
-                log("Key required but not provided", 3)
-                client.close()
-                return
-            response = {"Message": key}
-            encoded_response = base64.b64encode(json.dumps(response).encode()).decode()
-            client.send(encoded_response.encode())
+            attempts = 0
+            while attempts < 4:
+                key = input("Enter access key: ").strip()
+                response = {"Message": key}
+                encoded_response = base64.b64encode(json.dumps(response).encode()).decode()
+                client.send(encoded_response.encode())
 
-            data = client.recv(4096)
-            decoded = base64.b64decode(data).decode()
-            message = json.loads(decoded)
+                data = client.recv(4096)
+                decoded = base64.b64decode(data).decode()
+                message = json.loads(decoded)
 
-            if message.get("Message") == "Success":
-                log("Connection accepted!", 1)
-            else:
-                log("Connection rejected", 2)
+                if message.get("Message") == "Success":
+                    log("Connection accepted!", 1)
+                    client.close()
+                    return
+                elif message.get("Message") == "Wrong key":
+                    attempts += 1
+                    log(f"Wrong key! Attempts left: {4 - attempts}", 2)
+                else:
+                    log("Unexpected response from host", 3)
+                    break
+
+            log("Too many failed attempts. Disconnecting.", 3)
+            client.close()
+            return
+
+        elif message.get("Message") == "Success":
+            log("Connected without key", 1)
+            client.close()
+            return
         else:
-            if message.get("Message") == "Success":
-                log("Connected without key", 1)
-            else:
-                log("Unexpected response", 3)
+            log("Unexpected response from host", 3)
+            client.close()
+            return
 
-        client.close()
     except Exception as e:
         log(f"Connection error: {e}", 3)
 
