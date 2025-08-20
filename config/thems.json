@@ -1,0 +1,6 @@
+{
+    "Default": {"id": 1, "windows": "07", "linux": "\u001b[40m\u001b[37m"},
+    "GejPink": {"id": 2, "windows": "D7", "linux": "\u001b[45m\u001b[37m"},
+    "WhiteGej": {"id": 3, "windows": "70", "linux": "\u001b[47m\u001b[30m"},
+    "RedGej": {"id": 4, "windows": "C7", "linux": "\u001b[41m\u001b[37m"}
+}
