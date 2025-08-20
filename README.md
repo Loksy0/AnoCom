@@ -1,5 +1,20 @@
 # AnoCom
+## If you find any error/bug in the code, please report it!
 
+## 🛠 Features
+### P2Pchat
+- Handshake - ECDH
+- Message encryption - Double Ratchet, RSA, AES, B64
+- Ability to send files via the same encrypted route as messages
+  
+### P2Pcommands
+- /exit - to disconect
+- /send <file path> to share a file
+
+## 🕛 Futures
+- Create group chats with AES-256-GCM encryption and signatures Ed25519
+- Securing possible exploits in the project
+  
 ## 💸 Support
 
 If you find LazyCheck useful, consider supporting me:
@@ -10,4 +25,4 @@ If you find LazyCheck useful, consider supporting me:
 
 ---
 
-Thanks for using LazyCheck! 😴
+Thanks for using AnoCom! 👥
