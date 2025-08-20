@@ -1,0 +1,8 @@
+{
+    "Username": "User1",
+    "ChoiceStyle": "->",
+    "Them": "Default",
+    "AES_Key_Length": 32,
+    "HKDF_Info": "AnoCom handshake",
+    "them": "Default"
+}
